@@ -1,8 +1,22 @@
 const express = require('express');
-const { doSomeHeavyTask } = require('./util');
+const promClient = require('prom-client');
+const { doSomeHeavyTask, collectDefaultMetrics } = require('./util');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+// Collect default metrics
+collectDefaultMetrics(promClient);
+
+// Metrics endpoint
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', promClient.register.contentType);
+    res.end(await promClient.register.metrics());
+  } catch (err) {
+    res.status(500).end(err);
+  }
+});
 
 // Root endpoint for basic connectivity testing
 app.get('/', (req, res) => {

@@ -15,4 +15,8 @@ const doSomeHeavyTask = async () => {
   });
 };
 
-module.exports = { doSomeHeavyTask };
+const collectDefaultMetrics = (promClient) => {
+  promClient.collectDefaultMetrics();
+};
+
+module.exports = { doSomeHeavyTask, collectDefaultMetrics };
