@@ -1,0 +1,14 @@
+{
+  "name": "express-testing-server",
+  "version": "1.0.0",
+  "description": "A Node.js/Express server application designed for testing and performance measurement with heavy load simulation.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "author": "",
+  "license": "ISC"
+}
