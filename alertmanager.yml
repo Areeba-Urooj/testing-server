@@ -1,0 +1,33 @@
+global:
+  # The smarthost is your SMTP server. For Gmail, it's smtp.gmail.com.
+  # If you're using another provider, update this.
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_auth_username: 'cmy61677@gmail.com' # Your Gmail address
+  smtp_auth_password: 'areeba'           # IMPORTANT: Use an App Password, NOT your regular Gmail password
+  smtp_auth_identity: 'cmy61677@gmail.com' # Your Gmail address
+  smtp_require_tls: true                             # Keep this true for secure connections
+
+route:
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m # Changed to 5m for faster grouping in a demo
+  repeat_interval: 1h
+  receiver: 'email-notifications'
+
+receivers:
+- name: 'email-notifications'
+  email_configs:
+  - to: 'cmy61677@gmail.com'  # The email address that will receive the alerts
+    from: 'Monitoring@example.com' # Should be your sending Gmail address
+    html: true # Recommended for better formatting, especially with default templates
+    send_resolved: true # Send an email when an alert is resolved
+
+# Optional: Inhibit rules to prevent excessive notifications
+# This rule means if a 'critical' alert is firing, don't send 'warning' alerts
+# for the same alertname (e.g., if app is CRITICAL down, don't also send a WARNING for slow latency)
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']

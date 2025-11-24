@@ -4,9 +4,13 @@ services:
   app:
     build: .
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - PORT=8000
+    depends_on:
+      - loki
+    networks:
+      - monitoring
 
   prom-server:
     image: prom/prometheus
@@ -14,5 +18,43 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus-config.yml:/etc/prometheus/prometheus.yml
+      - ./alert-rules.yml:/etc/prometheus/alert-rules.yml
     depends_on:
       - app
+    networks:
+      - monitoring
+
+  loki:
+    image: grafana/loki:latest
+    user: "root"
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yml
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yml
+      - loki_data:/loki
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
+    depends_on:
+      - prom-server
+      - loki
+    networks:
+      - monitoring
+
+volumes:
+  loki_data:
+  grafana_data:
+
+networks:
+  monitoring:
+    driver: bridge

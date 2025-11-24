@@ -1,0 +1,61 @@
+groups:
+  - name: ApplicationAlerts
+    rules:
+      # 1. Alert for High Latency (uses your custom metric)
+      - alert: HighP95Latency
+        # Using the correct metric name (seconds) and setting the threshold to 2 seconds
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{route="/slow"}[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Warning: Slow Heavy Task Latency"
+          description: "The 95th percentile response time for the /slow route is over 2 seconds."
+
+      # 2. Alert for App Availability (requires Blackbox Exporter setup)
+      - alert: ServiceDown
+        # Checks if the blackbox probe fails (0)
+        expr: probe_success{job="blackbox", instance=~".*:8000/"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical: App is DOWN"
+          description: "The application endpoint on port 8000 is unreachable or not returning 200 OK."
+
+      # --- NEW RULES ADDED BELOW ---
+
+      # 3. Alert for High Memory Usage (Requires Node Exporter)
+      - alert: HighMemoryUsage
+        # Fires if available memory is less than 10% of total memory for 5 minutes.
+        # Node Exporter metrics used: node_memory_MemAvailable_bytes and node_memory_MemTotal_bytes
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100) < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Warning: High Node Memory Usage"
+          description: "Node memory usage is critically high (less than 10% available). Instance: {{ $labels.instance }}"
+
+      # 4. Alert for File System Almost Full (Requires Node Exporter)
+      - alert: FileSystemAlmostFull
+        # Fires if a filesystem partition has less than 5% free space for 15 minutes.
+        # Node Exporter metric used: node_filesystem_avail_bytes
+        expr: node_filesystem_avail_bytes{mountpoint!="/boot",fstype!="tmpfs"} / node_filesystem_size_bytes * 100 < 5
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical: Disk Space Low"
+          description: "Filesystem partition {{ $labels.mountpoint }} on instance {{ $labels.instance }} has less than 5% free space."
+
+      # 5. Alert for General Service/Job Failure
+      - alert: JobDown
+        # Checks if Prometheus has failed to scrape any target in the 'app' job for 1 minute.
+        expr: up{job="app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical: Prometheus Scrape Failure"
+          description: "Prometheus failed to scrape the targets in the {{ $labels.job }} job for over 1 minute. This usually means the service is unavailable or inaccessible."
